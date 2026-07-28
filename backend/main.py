@@ -45,8 +45,8 @@ def send_email(to_email: str, subject: str, html_body: str):
         part = MIMEText(html_body, "html")
         msg.attach(part)
 
-        with smtplib.SMTP("smtp.gmail.com", 587) as server:
-            server.starttls()
+        # 🔒 Render SSL Port 465 (Fixes Errno 101 Network Unreachable)
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(SENDER_EMAIL, SENDER_PASSWORD)
             server.sendmail(SENDER_EMAIL, to_email, msg.as_string())
         
@@ -55,7 +55,7 @@ def send_email(to_email: str, subject: str, html_body: str):
     except Exception as e:
         print(f"❌ [Email Error] Failed to send email to {to_email}: {e}")
         return False
-
+    
 # 1. Automatic CSV Initialization
 def init_csv():
     if not os.path.exists(CSV_FILE):
