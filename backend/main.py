@@ -1,7 +1,7 @@
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.responses import HTMLResponse
 from datetime import datetime, timedelta
 from fastapi.middleware.cors import CORSMiddleware
@@ -279,7 +279,7 @@ def get_appointments():
     return records
 
 @app.post("/api/appointments")
-def create_appointment(data: AppointmentCreate):
+def create_appointment(data: AppointmentCreate, background_tasks: BackgroundTasks):
     df = read_csv()
     email = data.email.strip()
     if not email.endswith("@gmail.com"):
@@ -305,7 +305,7 @@ def create_appointment(data: AppointmentCreate):
     df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
     df.to_csv(CSV_FILE, index=False)
     
-    # Instant Confirmation Email Logic with RSVP Buttons
+    # 📩 Email Background Task-la Add Panrom (Instant 0.1s Frontend Response!)
     subject = f"✅ Appointment Confirmed [{patient_id}] - Amirtha Clinic Hospital"
     html_body = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #ffffff;">
@@ -339,8 +339,8 @@ def create_appointment(data: AppointmentCreate):
             <!-- 🔘 Interactive RSVP Buttons -->
             <div style="text-align: center; margin: 25px 0; padding: 15px; background-color: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
                 <p style="font-weight: bold; color: #374151; margin-bottom: 12px; font-size: 14px;">Confirm your availability (At least 1 hr before slot time):</p>
-                <a href="http://127.0.0.1:8000/api/confirm-appointment?id={patient_id}&response=Yes" style="background-color: #0d9488; color: white; padding: 10px 18px; text-decoration: none; font-weight: bold; border-radius: 6px; margin-right: 8px; display: inline-block; font-size: 13px;">✅ Yes, I'll Attend</a>
-                <a href="http://127.0.0.1:8000/api/confirm-appointment?id={patient_id}&response=No" style="background-color: #dc2626; color: white; padding: 10px 18px; text-decoration: none; font-weight: bold; border-radius: 6px; display: inline-block; font-size: 13px;">❌ No, Cancel Slot</a>
+                <a href="https://amirtha-clinic-ai-agent.onrender.com/api/confirm-appointment?id={patient_id}&response=Yes" style="background-color: #0d9488; color: white; padding: 10px 18px; text-decoration: none; font-weight: bold; border-radius: 6px; margin-right: 8px; display: inline-block; font-size: 13px;">✅ Yes, I'll Attend</a>
+                <a href="https://amirtha-clinic-ai-agent.onrender.com/api/confirm-appointment?id={patient_id}&response=No" style="background-color: #dc2626; color: white; padding: 10px 18px; text-decoration: none; font-weight: bold; border-radius: 6px; display: inline-block; font-size: 13px;">❌ No, Cancel Slot</a>
             </div>
 
             <p style="color: #4b5563; font-size: 13px;">If you need to reschedule, please contact hospital reception.</p>
@@ -350,7 +350,9 @@ def create_appointment(data: AppointmentCreate):
         </div>
     </div>
     """
-    send_email(email, subject, html_body)
+    
+    # Non-blocking Background Task!
+    background_tasks.add_task(send_email, email, subject, html_body)
 
     return {"message": "Appointment created successfully!", "data": new_row}
 
