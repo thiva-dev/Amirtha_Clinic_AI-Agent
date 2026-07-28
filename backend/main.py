@@ -100,13 +100,13 @@ def send_today_email_reminders():
         time_slot = row["time"]
         doctor = row["doctor"]
         
-        subject = f"🔔 Reminder: Your Appointment Today at Amirtha Clinic Hospital"
+        subject = f"🔔 1-Hour Prior Reminder: Your Appointment Today at Amirtha Clinic Hospital"
         html_body = f"""
         <div style="font-family: Arial, sans-serif; max-width: 600px; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #f9fbfb;">
             <h2 style="color: #0d9488; text-align: center;">Amirtha Clinic Hospital</h2>
             <hr style="border: 0; border-top: 1px solid #0d9488;">
             <p>Dear <strong>{patient_name}</strong>,</p>
-            <p>This is a friendly reminder for your scheduled appointment <strong>TODAY</strong>.</p>
+            <p>This is your <strong>1-Hour Prior Reminder</strong> for your scheduled appointment today.</p>
             <div style="background-color: #ffffff; padding: 15px; border-left: 4px solid #0d9488; border-radius: 5px; margin: 15px 0;">
                 <p style="margin: 5px 0;"><strong>Patient ID:</strong> {patient_id}</p>
                 <p style="margin: 5px 0;"><strong>Doctor Assigned:</strong> {doctor}</p>
@@ -114,14 +114,14 @@ def send_today_email_reminders():
                 <p style="margin: 5px 0;"><strong>Time Slot:</strong> {time_slot}</p>
             </div>
             
-            <!-- 🔘 Interactive Mobile RSVP Buttons -->
+            <!-- 🔘 Interactive RSVP Buttons ONLY in Reminder Email! -->
             <div style="text-align: center; margin: 25px 0; padding: 15px; background-color: #ffffff; border-radius: 8px; border: 1px solid #e5e7eb;">
-                <p style="font-weight: bold; color: #374151; margin-bottom: 12px; font-size: 14px;">Confirm your availability (At least 1 hr before slot time):</p>
-                <a href="http://127.0.0.1:8000/api/confirm-appointment?id={patient_id}&response=Yes" style="background-color: #0d9488; color: white; padding: 10px 18px; text-decoration: none; font-weight: bold; border-radius: 6px; margin-right: 8px; display: inline-block; font-size: 13px;">✅ Yes, I'll Attend</a>
-                <a href="http://127.0.0.1:8000/api/confirm-appointment?id={patient_id}&response=No" style="background-color: #dc2626; color: white; padding: 10px 18px; text-decoration: none; font-weight: bold; border-radius: 6px; display: inline-block; font-size: 13px;">❌ No, Cancel Slot</a>
+                <p style="font-weight: bold; color: #374151; margin-bottom: 12px; font-size: 14px;">Are you attending this appointment in 1 hour?</p>
+                <a href="https://amirtha-clinic-ai-agent.onrender.com/api/confirm-appointment?id={patient_id}&response=Yes" style="background-color: #0d9488; color: white; padding: 10px 18px; text-decoration: none; font-weight: bold; border-radius: 6px; margin-right: 8px; display: inline-block; font-size: 13px;">✅ Yes, I'll Attend</a>
+                <a href="https://amirtha-clinic-ai-agent.onrender.com/api/confirm-appointment?id={patient_id}&response=No" style="background-color: #dc2626; color: white; padding: 10px 18px; text-decoration: none; font-weight: bold; border-radius: 6px; display: inline-block; font-size: 13px;">❌ No, Cancel Slot</a>
             </div>
 
-            <p style="color: #6b7280; font-size: 12px; text-align: center;">Note: Confirmation must be submitted at least 1 hour prior to appointment time.</p>
+            <p style="color: #6b7280; font-size: 12px; text-align: center;">Note: Confirm 'Yes' at least 1 hour before slot time.</p>
             <p style="font-size: 12px; color: #888; text-align: center; margin-top: 20px;">Amirtha Clinic Hospital Management System</p>
         </div>
         """
@@ -309,13 +309,13 @@ def create_appointment(data: AppointmentCreate, background_tasks: BackgroundTask
     df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
     df.to_csv(CSV_FILE, index=False)
     
-    # 📩 Email Background Task-la Add Panrom (Instant 0.1s Frontend Response!)
+    # 📩 Instant Confirmation Receipt Email (Without RSVP Yes/No Buttons)
     subject = f"✅ Appointment Confirmed [{patient_id}] - Amirtha Clinic Hospital"
     html_body = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #ffffff;">
         <div style="background-color: #0d9488; color: white; padding: 15px; text-align: center; border-radius: 8px 8px 0 0;">
             <h1 style="margin: 0; font-size: 22px;">Amirtha Clinic Hospital</h1>
-            <p style="margin: 5px 0 0 0; font-size: 14px;">Appointment Confirmation Slip</p>
+            <p style="margin: 5px 0 0 0; font-size: 14px;">Appointment Booking Receipt</p>
         </div>
         <div style="padding: 20px;">
             <p>Dear <strong>{data.name}</strong>,</p>
@@ -340,14 +340,7 @@ def create_appointment(data: AppointmentCreate, background_tasks: BackgroundTask
                 </tr>
             </table>
 
-            <!-- 🔘 Interactive RSVP Buttons -->
-            <div style="text-align: center; margin: 25px 0; padding: 15px; background-color: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
-                <p style="font-weight: bold; color: #374151; margin-bottom: 12px; font-size: 14px;">Confirm your availability (At least 1 hr before slot time):</p>
-                <a href="https://amirtha-clinic-ai-agent.onrender.com/api/confirm-appointment?id={patient_id}&response=Yes" style="background-color: #0d9488; color: white; padding: 10px 18px; text-decoration: none; font-weight: bold; border-radius: 6px; margin-right: 8px; display: inline-block; font-size: 13px;">✅ Yes, I'll Attend</a>
-                <a href="https://amirtha-clinic-ai-agent.onrender.com/api/confirm-appointment?id={patient_id}&response=No" style="background-color: #dc2626; color: white; padding: 10px 18px; text-decoration: none; font-weight: bold; border-radius: 6px; display: inline-block; font-size: 13px;">❌ No, Cancel Slot</a>
-            </div>
-
-            <p style="color: #4b5563; font-size: 13px;">If you need to reschedule, please contact hospital reception.</p>
+            <p style="color: #4b5563; font-size: 13px;">Note: You will receive a reminder email 1 hour prior to your appointment time with confirmation buttons.</p>
         </div>
         <div style="text-align: center; font-size: 12px; color: #9ca3af; border-top: 1px solid #eee; padding-top: 10px;">
             Thank you for choosing Amirtha Clinic Hospital.
@@ -355,7 +348,6 @@ def create_appointment(data: AppointmentCreate, background_tasks: BackgroundTask
     </div>
     """
     
-    # Non-blocking Background Task!
     background_tasks.add_task(send_email, email, subject, html_body)
 
     return {"message": "Appointment created successfully!", "data": new_row}

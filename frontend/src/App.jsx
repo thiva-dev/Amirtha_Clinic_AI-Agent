@@ -477,21 +477,13 @@ export default function App() {
                   </select>
                 </div>
 
-                {/* 🔘 Single Submit Button & View Details Button Side-By-Side */}
-                <div className="md:col-span-2 pt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
+                {/* 🔘 Clean Full-Width Submit Button for Patients */}
+                <div className="md:col-span-2 pt-2">
                   <button
                     type="submit"
-                    className="w-full sm:w-auto flex-1 py-4 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-lg rounded-xl shadow-md transition-all"
+                    className="w-full py-4 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-lg rounded-xl shadow-md transition-all"
                   >
                     {editingId ? "Update Appointment" : "Submit & Book Appointment"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPage('view_appointments')}
-                    className="w-full sm:w-auto py-4 px-6 bg-slate-100 hover:bg-slate-200 text-teal-800 font-semibold text-base rounded-xl transition-all border border-slate-200 flex items-center justify-center gap-2"
-                  >
-                    <Calendar className="w-5 h-5 text-teal-600" />
-                    View Appointment Details
                   </button>
                 </div>
               </form>
@@ -701,24 +693,29 @@ export default function App() {
                 <Bot className="w-5 h-5 text-teal-400" /> AI Receptionist Assistant
               </h1>
             </div>
-        {/* Small Counter Boxes with Doctor Workload */}
-          
-         <div className="flex items-center gap-3">
-           <div className="bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 text-xs hidden sm:flex items-center gap-2">
-             <span className="text-slate-400">Dr.Suresh:</span>
-             <span className="font-bold text-teal-400">{appointments.filter(a => a.doctor === 'Dr.Suresh').length}</span>
-             <span className="text-slate-400 ml-2">Dr.Anand:</span>
-             <span className="font-bold text-teal-400">{appointments.filter(a => a.doctor === 'Dr.Anand').length}</span>
-           </div>
-           <div className="bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 flex items-center gap-2">
-             <span className="text-xs text-slate-400">Total:</span>
-             <span className="font-bold text-teal-400">{totalCount}</span>
-           </div>
-           <div className="bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 flex items-center gap-2">
-             <span className="text-xs text-slate-400">Today:</span>
-             <span className="font-bold text-amber-400">{todayCount}</span>
-           </div>
-         </div>
+        {/* Small Counter Boxes with Doctor Workload & View Details Button */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setPage('view_appointments')}
+                className="bg-teal-600 hover:bg-teal-500 text-white font-semibold text-xs px-3 py-2 rounded-lg flex items-center gap-1.5 shadow transition-all"
+              >
+                <Calendar className="w-4 h-4" /> View Details
+              </button>
+              <div className="bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 text-xs hidden sm:flex items-center gap-2">
+                <span className="text-slate-400">Dr.Suresh:</span>
+                <span className="font-bold text-teal-400">{appointments.filter(a => a.doctor === 'Dr.Suresh').length}</span>
+                <span className="text-slate-400 ml-2">Dr.Anand:</span>
+                <span className="font-bold text-teal-400">{appointments.filter(a => a.doctor === 'Dr.Anand').length}</span>
+              </div>
+              <div className="bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 flex items-center gap-2">
+                <span className="text-xs text-slate-400">Total:</span>
+                <span className="font-bold text-teal-400">{totalCount}</span>
+              </div>
+              <div className="bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 flex items-center gap-2">
+                <span className="text-xs text-slate-400">Today:</span>
+                <span className="font-bold text-amber-400">{todayCount}</span>
+              </div>
+            </div>
           </header>
 
           {/* Main Chat & Data Body */}
