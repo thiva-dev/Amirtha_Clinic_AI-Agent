@@ -28,32 +28,36 @@ load_dotenv()
 CSV_FILE = "appointments.csv"
 # send_email after appointment booking
 
-SENDER_EMAIL = os.getenv("SENDER_EMAIL", "")
-SENDER_PASSWORD = os.getenv("SENDER_PASSWORD", "")
+import requests
+
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "7e81a211-5e92-4992-8f1a-ce3251730822")
 
 def send_email(to_email: str, subject: str, html_body: str):
-    if not SENDER_EMAIL or not SENDER_PASSWORD:
-        print("⚠️ [Email Skipped]: SENDER_EMAIL or SENDER_PASSWORD not set in .env file")
-        return False
+    if not RESEND_API_KEY:
+        print(f"📧 [Email Simulated to {to_email}]: {subject}")
+        return True
     
     try:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = subject
-        msg["From"] = f"Amirtha Clinic Hospital <{SENDER_EMAIL}>"
-        msg["To"] = to_email
-
-        part = MIMEText(html_body, "html")
-        msg.attach(part)
-
-        # 🔒 Render SSL Port 465 (Fixes Errno 101 Network Unreachable)
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-            server.login(SENDER_EMAIL, SENDER_PASSWORD)
-            server.sendmail(SENDER_EMAIL, to_email, msg.as_string())
-        
-        print(f"📧 ✅ [Real Email Sent] Successfully sent to {to_email}")
-        return True
+        url = "https://api.resend.com/emails"
+        headers = {
+            "Authorization": f"Bearer {RESEND_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "from": "Amirtha Clinic Hospital <onboarding@resend.dev>",
+            "to": [to_email],
+            "subject": subject,
+            "html": html_body
+        }
+        response = requests.post(url, json=payload, headers=headers)
+        if response.status_code in [200, 201]:
+            print(f"📧 ✅ [Real Email Delivered via Resend API]: Successfully sent to {to_email}")
+            return True
+        else:
+            print(f"❌ [Resend API Error]: {response.text}")
+            return False
     except Exception as e:
-        print(f"❌ [Email Error] Failed to send email to {to_email}: {e}")
+        print(f"❌ [Email Exception Error]: {e}")
         return False
     
 # 1. Automatic CSV Initialization
