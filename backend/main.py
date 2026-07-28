@@ -30,7 +30,7 @@ CSV_FILE = "appointments.csv"
 
 import requests
 
-RESEND_API_KEY = os.getenv("RESEND_API_KEY", "7e81a211-5e92-4992-8f1a-ce3251730822")
+RESEND_API_KEY = os.getenv("RESEND_API_KEY","re_VGuHbtnH_Nz7XqBedSJfPV4sqxuBzV2s4")
 
 def send_email(to_email: str, subject: str, html_body: str):
     if not RESEND_API_KEY:
