@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+pandas
+pydantic
+python-dotenv
+apscheduler
+google-generativeai
