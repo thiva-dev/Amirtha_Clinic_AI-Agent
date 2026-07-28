@@ -5,7 +5,7 @@ import {
   Send, Bot, Activity, CheckCircle2, ShieldAlert, X, AlertCircle
 } from 'lucide-react';
 
-const API_BASE = "http://127.0.0.1:8000/api";
+const API_BASE = "https://amirtha-clinic-ai-agent.onrender.com";
 
 export default function App() {
   const [page, setPage] = useState('home'); // 'home', 'booking', 'receptionist_login', 'dashboard'
