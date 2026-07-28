@@ -7,6 +7,28 @@ import {
 
 const API_BASE = "https://amirtha-clinic-ai-agent.onrender.com/api";
 
+// 🏥 Clinic Working Hours & 15-Min Slot Generator (10:00 AM - 8:00 PM, Lunch 12:00 - 1:30 PM Excluded)
+const generateClinicSlots = () => {
+  const slots = [];
+  for (let h = 10; h <= 20; h++) {
+    for (let m = 0; m < 60; m += 15) {
+      if (h === 20 && m > 0) break; // Ends at 20:00 (8:00 PM)
+      
+      const timeInMins = h * 60 + m;
+      const lunchStart = 12 * 60;        // 12:00 PM
+      const lunchEnd = 13 * 60 + 30;     // 1:30 PM
+      
+      // Skip Lunch Slots (12:00 PM to 1:30 PM)
+      if (timeInMins >= lunchStart && timeInMins < lunchEnd) continue;
+
+      const hh = h < 10 ? `0${h}` : `${h}`;
+      const mm = m === 0 ? '00' : `${m}`;
+      slots.push(`${hh}:${mm}`);
+    }
+  }
+  return slots;
+};
+
 export default function App() {
   const [page, setPage] = useState('home'); // 'home', 'booking', 'receptionist_login', 'dashboard'
   const [showBookingSuccess, setShowBookingSuccess] = useState(false);
@@ -85,6 +107,36 @@ export default function App() {
     const interval = setInterval(checkAppointmentTimeAlert, 10000);
     return () => clearInterval(interval);
   }, [appointments]);
+
+
+// 📅 Sunday Leave & Date Handler
+  const handleDateChange = (val) => {
+    if (!val) {
+      setFormData({ ...formData, date: '', time: '' });
+      return;
+    }
+    
+    // Check Sunday
+    const [year, month, day] = val.split('-').map(Number);
+    const dateObj = new Date(year, month - 1, day);
+    
+    if (dateObj.getDay() === 0) { // 0 = Sunday
+      setFormError("🚨 Sunday is a Clinic Holiday! Please select Monday to Saturday.");
+      setFormData({ ...formData, date: '', time: '' });
+      return;
+    }
+
+    setFormError('');
+    setFormData({ ...formData, date: val, time: '' }); // Reset time when date changes
+  };
+
+  // 🎯 Filter Out Already Booked Slots for Selected Date (Double Booking Avoidance)
+  const allClinicSlots = generateClinicSlots();
+  const bookedTimes = appointments
+    .filter(apt => apt.date === formData.date && apt.patient_id !== editingId)
+    .map(apt => apt.time);
+
+  const availableSlots = allClinicSlots.filter(time => !bookedTimes.includes(time));
 
   // Format Email Automatically with @gmail.com
   const handleEmailChange = (val) => {
@@ -378,26 +430,51 @@ export default function App() {
                   />
                 </div>
 
+                {/* Appointment Date Selection (Sunday Restricted) */}
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">Appointment Date *</label>
                   <input
                     type="date"
                     required
+                    min={new Date().toISOString().split('T')[0]}
                     value={formData.date}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    onChange={(e) => handleDateChange(e.target.value)}
                     className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-teal-500 focus:outline-none"
                   />
                 </div>
 
+                {/* 15-Min Dynamic Available Time Slots Dropdown */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Appointment Time *</label>
-                  <input
-                    type="time"
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Appointment Time * {formData.date && `(${availableSlots.length} Slots Available)`}
+                  </label>
+                  <select
                     required
                     value={formData.time}
                     onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-teal-500 focus:outline-none"
-                  />
+                    disabled={!formData.date}
+                    className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-teal-500 focus:outline-none bg-white disabled:bg-slate-100 disabled:cursor-not-allowed"
+                  >
+                    <option value="">
+                      {!formData.date 
+                        ? "-- Select Date First --" 
+                        : availableSlots.length === 0 
+                        ? "❌ All slots booked for this date!" 
+                        : "-- Select 15-Min Available Slot --"}
+                    </option>
+                    {availableSlots.map((slot) => {
+                      const [h, m] = slot.split(':').map(Number);
+                      const period = h >= 12 ? 'PM' : 'AM';
+                      const displayH = h > 12 ? h - 12 : h === 0 ? 12 : h;
+                      const displayTime = `${displayH}:${m === 0 ? '00' : m} ${period}`;
+                      
+                      return (
+                        <option key={slot} value={slot}>
+                          {slot} ({displayTime})
+                        </option>
+                      );
+                    })}
+                  </select>
                 </div>
 
                 {/* 🔘 Single Submit Button & View Details Button Side-By-Side */}
