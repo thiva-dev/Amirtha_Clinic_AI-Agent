@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
   Calendar, Clock, User, Phone, Mail, Trash2, Edit3, ArrowLeft, 
-  Send, Bot, Activity, CheckCircle2, ShieldAlert, X, AlertCircle
+  Send, Bot, Activity, CheckCircle2, ShieldAlert, X, AlertCircle, Menu
 } from 'lucide-react';
 
 const API_BASE = "https://amirtha-clinic-ai-agent.onrender.com/api";
@@ -70,11 +70,25 @@ export default function App() {
     fetchAppointments();
   }, []);
 
-   // Real-Time Appointment Window & 15-20 Min Late Checker
+// Mobile Hamburger Menu State
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Helper for Local Date String YYYY-MM-DD
+  const getLocalTodayStr = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Real-Time 10-Minute Appointment Window & 15-20 Min Late Overdue Checker
+  const [lateAlertPatient, setLateAlertPatient] = useState(null);
+
   useEffect(() => {
     const checkAppointmentTimeAlert = () => {
       const now = new Date();
-      const todayStr = now.toISOString().split('T')[0];
+      const todayStr = getLocalTodayStr(); // Fixed local timezone date!
       const currentMins = now.getHours() * 60 + now.getMinutes();
 
       let activePatient = null;
@@ -93,7 +107,7 @@ export default function App() {
           activePatient = apt;
         }
 
-        // 15-20 Mins LATE Overdue Window (Dr. Suresh Pain Point solved!)
+        // 15-20 Mins LATE Overdue Window
         if (currentMins >= aptMins + 15 && currentMins <= aptMins + 30) {
           overduePatient = apt;
         }
@@ -676,46 +690,95 @@ export default function App() {
         </div>
       )}
 
-      {/* PAGE 4: RECEPTIONIST DASHBOARD (ChatGPT / Claude AI Style) */}
-      {page === 'dashboard' && (
-        <div className="h-screen flex flex-col bg-slate-100 text-slate-800">
-          
-          {/* Top Bar with Counters & User Title */}
-          <header className="h-16 border-b border-slate-800 bg-slate-950 px-6 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button 
-                onClick={() => setPage('home')} 
-                className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-              <h1 className="font-bold text-lg text-teal-400 flex items-center gap-2">
-                <Bot className="w-5 h-5 text-teal-400" /> AI Receptionist Assistant
-              </h1>
+      {/* Top Bar with Responsive Mobile Hamburger Menu (☰) */}
+          <header className="border-b border-slate-200 bg-white px-4 md:px-6 py-3 shadow-sm relative z-30">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 md:gap-3">
+                <button 
+                  onClick={() => setPage('home')} 
+                  className="p-1.5 md:p-2 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-800 transition-colors"
+                  title="Back to Home"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <h1 className="font-bold text-base md:text-lg text-teal-700 flex items-center gap-2">
+                  <Bot className="w-5 h-5 text-teal-600 flex-shrink-0" /> 
+                  <span className="truncate">AI Receptionist</span>
+                </h1>
+              </div>
+
+              {/* Desktop Menu (Hidden on Mobile) */}
+              <div className="hidden md:flex items-center gap-3">
+                <button
+                  onClick={() => setPage('view_appointments')}
+                  className="bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow-sm transition-all"
+                >
+                  <Calendar className="w-4 h-4" /> View Details
+                </button>
+                
+                <div className="bg-teal-50 border border-teal-100 px-3 py-1.5 rounded-lg text-xs flex items-center gap-2">
+                  <span className="text-teal-800 font-medium">Dr.Suresh:</span>
+                  <span className="font-bold text-teal-700">{appointments.filter(a => a.doctor === 'Dr.Suresh').length}</span>
+                  <span className="text-teal-800 font-medium ml-2">Dr.Anand:</span>
+                  <span className="font-bold text-teal-700">{appointments.filter(a => a.doctor === 'Dr.Anand').length}</span>
+                </div>
+
+                <div className="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg flex items-center gap-2">
+                  <span className="text-xs text-slate-500">Total:</span>
+                  <span className="font-bold text-teal-700">{totalCount}</span>
+                </div>
+
+                <div className="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg flex items-center gap-2">
+                  <span className="text-xs text-slate-500">Today:</span>
+                  <span className="font-bold text-amber-600">{todayCount}</span>
+                </div>
+              </div>
+
+              {/* Mobile Hamburger Menu Toggle Button (☰ / ✕) */}
+              <div className="md:hidden flex items-center">
+                <button
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  className="p-2 text-slate-600 hover:text-teal-700 hover:bg-slate-100 rounded-lg transition-all"
+                  aria-label="Toggle Menu"
+                >
+                  {isMobileMenuOpen ? <X className="w-6 h-6 text-teal-700" /> : <Menu className="w-6 h-6 text-slate-700" />}
+                </button>
+              </div>
             </div>
-        {/* Small Counter Boxes with Doctor Workload & View Details Button */}
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setPage('view_appointments')}
-                className="bg-teal-600 hover:bg-teal-500 text-white font-semibold text-xs px-3 py-2 rounded-lg flex items-center gap-1.5 shadow transition-all"
-              >
-                <Calendar className="w-4 h-4" /> View Details
-              </button>
-              <div className="bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 text-xs hidden sm:flex items-center gap-2">
-                <span className="text-slate-400">Dr.Suresh:</span>
-                <span className="font-bold text-teal-400">{appointments.filter(a => a.doctor === 'Dr.Suresh').length}</span>
-                <span className="text-slate-400 ml-2">Dr.Anand:</span>
-                <span className="font-bold text-teal-400">{appointments.filter(a => a.doctor === 'Dr.Anand').length}</span>
+
+            {/* Mobile Dropdown Drawer (Appears when ☰ is clicked) */}
+            {isMobileMenuOpen && (
+              <div className="md:hidden mt-3 pt-3 border-t border-slate-200 flex flex-col gap-2.5 animate-fade-in bg-white rounded-xl p-3 shadow-lg">
+                <button
+                  onClick={() => {
+                    setPage('view_appointments');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs py-2.5 rounded-lg flex items-center justify-center gap-2 shadow-sm"
+                >
+                  <Calendar className="w-4 h-4" /> View All Appointment Details
+                </button>
+
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-teal-50 border border-teal-100 p-2 rounded-lg text-center">
+                    <span className="text-slate-500 block text-[10px]">Dr. Suresh</span>
+                    <span className="font-bold text-teal-700 text-sm">{appointments.filter(a => a.doctor === 'Dr.Suresh').length} Patients</span>
+                  </div>
+                  <div className="bg-teal-50 border border-teal-100 p-2 rounded-lg text-center">
+                    <span className="text-slate-500 block text-[10px]">Dr. Anand</span>
+                    <span className="font-bold text-teal-700 text-sm">{appointments.filter(a => a.doctor === 'Dr.Anand').length} Patients</span>
+                  </div>
+                  <div className="bg-slate-100 border border-slate-200 p-2 rounded-lg text-center">
+                    <span className="text-slate-500 block text-[10px]">Total Bookings</span>
+                    <span className="font-bold text-teal-700 text-sm">{totalCount}</span>
+                  </div>
+                  <div className="bg-slate-100 border border-slate-200 p-2 rounded-lg text-center">
+                    <span className="text-slate-500 block text-[10px]">Today's Bookings</span>
+                    <span className="font-bold text-amber-600 text-sm">{todayCount}</span>
+                  </div>
+                </div>
               </div>
-              <div className="bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 flex items-center gap-2">
-                <span className="text-xs text-slate-400">Total:</span>
-                <span className="font-bold text-teal-400">{totalCount}</span>
-              </div>
-              <div className="bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 flex items-center gap-2">
-                <span className="text-xs text-slate-400">Today:</span>
-                <span className="font-bold text-amber-400">{todayCount}</span>
-              </div>
-            </div>
+            )}
           </header>
 
           {/* Main Chat & Data Body */}
