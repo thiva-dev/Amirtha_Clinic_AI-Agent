@@ -823,12 +823,12 @@ export default function App() {
 
           </div>
 
-          {/* ChatGPT / Claude Style Input Area */}
-          <div className="p-4 border-t border-slate-800 bg-slate-950">
+          {/* Calm Light Medical Input Area */}
+          <div className="p-4 border-t border-slate-200 bg-slate-100">
             <div className="max-w-4xl mx-auto flex items-center gap-3">
               <input
                 type="text"
-                placeholder="Ask AI Receptionist (e.g., 'Today's appointments', 'Total appointments', 'Who has highest no show count?')..."
+                placeholder="Ask AI Receptionist (e.g., 'Today's appointments', 'Tomorrow appointments', 'Who has highest no show count?')..."
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
@@ -836,7 +836,7 @@ export default function App() {
               />
               <button
                 onClick={handleSendChat}
-                className="bg-teal-600 hover:bg-teal-500 text-white p-3.5 rounded-xl shadow-md transition-all"
+                className="bg-teal-600 hover:bg-teal-700 text-white p-3.5 rounded-xl shadow-md transition-all flex items-center justify-center"
               >
                 <Send className="w-5 h-5" />
               </button>
