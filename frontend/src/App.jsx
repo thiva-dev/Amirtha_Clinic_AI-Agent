@@ -512,11 +512,11 @@ export default function App() {
             {/* Top Navigation */}
             <div className="flex items-center justify-between mb-6">
               <button 
-                onClick={() => setPage('booking')}
-                className="flex items-center gap-2 text-teal-700 font-medium hover:text-teal-900 transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" /> Back to Booking Form
-              </button>
+              onClick={() => setPage('dashboard')}
+              className="flex items-center gap-2 text-teal-700 font-medium hover:text-teal-900 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" /> Back to AI Dashboard
+            </button>
               <button 
                 onClick={() => setPage('home')}
                 className="text-slate-500 hover:text-slate-800 text-sm font-medium"
