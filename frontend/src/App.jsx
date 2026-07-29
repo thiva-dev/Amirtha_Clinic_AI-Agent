@@ -42,7 +42,6 @@ export default function App() {
 
  // Time Alert State Variable
   const [activeAlertPatient, setActiveAlertPatient] = useState(null);
-  const [lateAlertPatient, setLateAlertPatient] = useState(null);
   // Receptionist Login State
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
