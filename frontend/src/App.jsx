@@ -678,7 +678,7 @@ export default function App() {
 
       {/* PAGE 4: RECEPTIONIST DASHBOARD (ChatGPT / Claude AI Style) */}
       {page === 'dashboard' && (
-        <div className="h-screen flex flex-col bg-slate-900 text-slate-100">
+        <div className="h-screen flex flex-col bg-slate-100 text-slate-800">
           
           {/* Top Bar with Counters & User Title */}
           <header className="h-16 border-b border-slate-800 bg-slate-950 px-6 flex items-center justify-between">
@@ -727,7 +727,7 @@ export default function App() {
                 <div className={`max-w-xl p-4 rounded-2xl text-sm leading-relaxed ${
                   m.sender === 'user' 
                     ? 'bg-teal-600 text-white rounded-br-none' 
-                    : 'bg-slate-800 text-slate-200 border border-slate-700 rounded-bl-none shadow-sm'
+                   : 'bg-white text-slate-900 border border-slate-200 rounded-bl-none shadow-sm font-medium'
                 }`}>
                   {m.text}
                 </div>
@@ -832,7 +832,7 @@ export default function App() {
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
-                className="flex-1 bg-slate-900 border border-slate-700 text-white rounded-xl px-4 py-3.5 focus:outline-none focus:border-teal-500"
+                className="flex-1 bg-white border border-slate-300 text-slate-900 placeholder-slate-400 rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-teal-500 shadow-sm"
               />
               <button
                 onClick={handleSendChat}
