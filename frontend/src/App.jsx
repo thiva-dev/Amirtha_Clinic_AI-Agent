@@ -688,7 +688,9 @@ export default function App() {
           </div>
         </div>
       )}
-
+        {/* PAGE 4: DASHBOARD */}
+      {page === 'dashboard' && (
+      <div className="min-h-screen flex flex-col bg-slate-50">
       {/* Top Bar with Responsive Mobile Hamburger Menu (☰) */}
           <header className="border-b border-slate-200 bg-white px-4 md:px-6 py-3 shadow-sm relative z-30">
             <div className="flex items-center justify-between">
@@ -905,5 +907,9 @@ export default function App() {
             </div>
           </div>
 
-        </div>
+           </div>
       )}
+    </div>
+  );
+}
+  
