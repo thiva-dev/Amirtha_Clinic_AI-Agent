@@ -66,11 +66,52 @@ def init_csv():
             "email", "date", "time", "doctor", 
             "status", "no_show_count", "response", "reminder_sent"
         ])
-        df.to_csv(CSV_FILE, index=False)
+        save_csv(df)
 
 def read_csv():
     init_csv()
     return pd.read_csv(CSV_FILE, dtype=str).fillna("")
+import base64
+
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
+GITHUB_REPO = os.getenv("GITHUB_REPO", "thiva-dev/Amirtha_Clinic_AI-Agent")
+CSV_PATH_IN_REPO = os.getenv("CSV_PATH_IN_REPO", "appointments.csv")
+
+def save_csv(df: pd.DataFrame):
+    # 1. Save locally
+    save_csv(df)
+    
+    # 2. Save permanently to GitHub Repo
+    if not GITHUB_TOKEN or not GITHUB_REPO:
+        return
+        
+    try:
+        url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{CSV_PATH_IN_REPO}"
+        headers = {
+            "Authorization": f"Bearer {GITHUB_TOKEN}",
+            "Accept": "application/vnd.github.v3+json"
+        }
+        
+        # Get Current File SHA from GitHub
+        res = requests.get(url, headers=headers)
+        sha = ""
+        if res.status_code == 200:
+            sha = res.json().get("sha", "")
+            
+        csv_content = df.to_csv(index=False)
+        encoded_content = base64.b64encode(csv_content.encode("utf-8")).decode("utf-8")
+        
+        payload = {
+            "message": "Auto-sync live appointment data to GitHub",
+            "content": encoded_content
+        }
+        if sha:
+            payload["sha"] = sha
+            
+        requests.put(url, json=payload, headers=headers)
+        print("💾 ✅ [GitHub Auto-Sync]: Updated CSV permanently saved to GitHub Repo!")
+    except Exception as e:
+        print(f"❌ [GitHub Sync Note]: {e}")
 
 # Doctor Workload Equal Split Logic
 def assign_doctor():
@@ -93,7 +134,7 @@ def check_and_send_1hr_reminders():
     
     if "reminder_sent" not in df.columns:
         df["reminder_sent"] = "No"
-        df.to_csv(CSV_FILE, index=False)
+        save_csv(df)
 
     sent_count = 0
     for idx, row in df.iterrows():
@@ -148,7 +189,7 @@ def check_and_send_1hr_reminders():
             print(f"Reminder Error: {e}")
             
     if sent_count > 0:
-        df.to_csv(CSV_FILE, index=False)
+        save_csv(df)
         
     return sent_count
 
@@ -251,7 +292,7 @@ def confirm_appointment(id: str, response: str):
             """
         else:
             df.at[idx, "response"] = "Yes"
-            df.to_csv(CSV_FILE, index=False)
+            save_csv(df)
             return f"""
             <html>
                 <head><title>Appointment Confirmed</title><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
@@ -273,7 +314,7 @@ def confirm_appointment(id: str, response: str):
         curr_no_show = int(df.at[idx, "no_show_count"]) if str(df.at[idx, "no_show_count"]).isdigit() else 0
         df.at[idx, "no_show_count"] = str(curr_no_show + 1)
         
-        df.to_csv(CSV_FILE, index=False)
+        save_csv(df)
         return f"""
         <html>
             <head><title>Appointment Cancelled</title><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
@@ -331,7 +372,7 @@ def create_appointment(data: AppointmentCreate, background_tasks: BackgroundTask
     }
     
     df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-    df.to_csv(CSV_FILE, index=False)
+    save_csv(df)
     
     # 📩 Instant Confirmation Receipt Email (Without RSVP Yes/No Buttons)
     subject = f"✅ Appointment Confirmed [{patient_id}] - Amirtha Clinic Hospital"
@@ -394,7 +435,7 @@ def update_appointment(patient_id: str, data: AppointmentUpdate):
     df.at[idx, "date"] = data.date
     df.at[idx, "time"] = data.time
     
-    df.to_csv(CSV_FILE, index=False)
+    save_csv(df)
     return {"message": "Appointment updated successfully!"}
 
 @app.delete("/api/appointments/{patient_id}")
@@ -404,7 +445,7 @@ def delete_appointment(patient_id: str):
         raise HTTPException(status_code=404, detail="Patient ID not found")
     
     df = df[df["patient_id"] != patient_id]
-    df.to_csv(CSV_FILE, index=False)
+    save_csv(df)
     return {"message": "Appointment deleted successfully!"}
 
 @app.put("/api/appointments/{patient_id}/status")
@@ -421,7 +462,7 @@ def update_status(patient_id: str, data: StatusUpdate):
         current_count = int(df.at[idx, "no_show_count"]) if str(df.at[idx, "no_show_count"]).isdigit() else 0
         df.at[idx, "no_show_count"] = str(current_count + 1)
         
-    df.to_csv(CSV_FILE, index=False)
+    save_csv(df)
     return {"message": f"Status updated to {new_status} successfully!"}
 
 # AI Chatbot Endpoint (ChatGPT / Claude Style Dynamic Smart AI Engine)
