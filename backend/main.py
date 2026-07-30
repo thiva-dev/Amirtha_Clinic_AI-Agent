@@ -70,8 +70,9 @@ def save_csv(df: pd.DataFrame):
     except Exception as e:
         print(f"❌ [GitHub Sync Note]: {e}")
 
-# 📧 DUAL FAIL-SAFE EMAIL SENDER (Tries Resend API first, then Gmail SMTP SSL/TLS Fallback!)
+# 📧 DUAL FAIL-SAFE EMAIL SENDER (Resend HTTP API + Gmail SMTP Fallback)
 def send_email(to_email: str, subject: str, html_body: str):
+    print(f"🚀 [send_email Triggered] Sending email to: {to_email}")
     resend_key = os.getenv("RESEND_API_KEY", "").strip()
     sender_email = os.getenv("SENDER_EMAIL", "").strip()
     sender_password = os.getenv("SENDER_PASSWORD", "").strip()
@@ -85,7 +86,7 @@ def send_email(to_email: str, subject: str, html_body: str):
                 "Content-Type": "application/json"
             }
             payload = {
-                "from": "Amirtha Clinic Hospital <onboarding@resend.dev>",
+                "from": "onboarding@resend.dev",
                 "to": [to_email],
                 "subject": subject,
                 "html": html_body
@@ -95,7 +96,7 @@ def send_email(to_email: str, subject: str, html_body: str):
                 print(f"📧 ✅ [Real Email Delivered via Resend API]: Successfully sent to {to_email}")
                 return True
             else:
-                print(f"⚠️ [Resend API Note]: {response.text}")
+                print(f"⚠️ [Resend API Note - Status {response.status_code}]: {response.text}")
         except Exception as e:
             print(f"⚠️ [Resend API Exception]: {e}")
 
@@ -136,7 +137,7 @@ def send_email(to_email: str, subject: str, html_body: str):
         except Exception as e:
             print(f"❌ [Gmail SMTP TLS 587 Error]: {e}")
 
-    print(f"📧 [Email Simulated Log]: To {to_email} | Subject: {subject}")
+    print(f"📧 [Email Simulation Mode]: {to_email} | {subject}")
     return True
 
 # 1. Automatic CSV Initialization
@@ -162,15 +163,16 @@ def assign_doctor():
     anand_count = len(df[df["doctor"] == "Dr.Anand"])
     return "Dr.Suresh" if suresh_count <= anand_count else "Dr.Anand"
 
-# 🕒 Automatic 1-Hour Prior Email Reminder Checker Job
+# 🕒 Automatic 1-Hour Prior Email Reminder Checker Job (IST Timezone Adjusted!)
 def check_and_send_1hr_reminders():
     df = read_csv()
     if df.empty:
         return 0
     
-    now = datetime.now()
-    today_str = now.strftime("%Y-%m-%d")
-    current_mins = now.hour * 60 + now.minute
+    # Render Cloud Server (UTC) -> Fixed to Indian Standard Time (IST = UTC + 5:30)
+    now_ist = datetime.utcnow() + timedelta(hours=5, minutes=30)
+    today_str = now_ist.strftime("%Y-%m-%d")
+    current_mins = now_ist.hour * 60 + now_ist.minute
     
     if "reminder_sent" not in df.columns:
         df["reminder_sent"] = "No"
@@ -301,17 +303,17 @@ def confirm_appointment(id: str, response: str):
     
     clean_resp = "Yes" if response.lower() == "yes" else "No"
     
-    # 🕒 1-Hour Cutoff Logic
+    # 🕒 1-Hour Cutoff Logic (IST Adjusted)
     try:
         apt_dt = datetime.strptime(f"{apt_date_str} {apt_time_str}", "%Y-%m-%d %H:%M")
     except Exception:
         apt_dt = datetime.now()
         
-    now = datetime.now()
+    now_ist = datetime.utcnow() + timedelta(hours=5, minutes=30)
     cutoff_dt = apt_dt - timedelta(hours=1)
 
     if clean_resp == "Yes":
-        if now > cutoff_dt:
+        if now_ist > cutoff_dt:
             return f"""
             <html>
                 <head><title>Confirmation Window Closed</title><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
