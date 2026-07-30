@@ -369,13 +369,21 @@ export default function App() {
       {page === 'booking' && (
         <div className="min-h-screen bg-slate-50 p-4 md:p-8">
           <div className="max-w-4xl mx-auto">
-            {/* Top Navigation */}
-            <button 
-              onClick={() => setPage('home')}
-              className="mb-6 flex items-center gap-2 text-teal-700 font-medium hover:text-teal-900 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" /> Back to Home
-            </button>
+      {/* Dynamic Top Navigation (Changes based on New Booking vs Edit Mode) */}
+          <button 
+            onClick={() => {
+              if (editingId) {
+                setEditingId(null);
+                setFormData({ name: '', age: '', phone: '', email: '', date: '', time: '' });
+                setPage('view_appointments');
+              } else {
+                setPage('home');
+              }
+            }}
+            className="mb-6 flex items-center gap-2 text-teal-700 font-medium hover:text-teal-900 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" /> {editingId ? "Back to View Appointments" : "Back to Home"}
+          </button>
 
             {/* Main Form Box */}
             <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 md:p-8 mb-10">
