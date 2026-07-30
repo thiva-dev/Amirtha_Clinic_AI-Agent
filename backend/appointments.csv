@@ -1,5 +1,6 @@
-patient_id,name,age,phone,email,date,time,doctor,status,no_show_count,response
-ACH-1001,Thivagaran,23,7708360158,thivagaran.dev@gmail.com,2026-07-28,12:40,Dr.Suresh,Attended,0,
-ACH-1002,Veeralaskdhmi,41,9944935614,veralakshmi@gmail.com,2026-07-28,12:55,Dr.Anand,No Show,1,
-ACH-1003,Ravi,30,7708360157,ravi@gmail.com,2026-07-28,13:30,Dr.Suresh,Pending,0,
-ACH-1004,Thinakaran,21,7708360158,thivagaran.dev@gmail.com,2026-07-29,18:10,Dr.Anand,Pending,0,Pending
+patient_id,name,age,phone,email,date,time,doctor,status,no_show_count,response,reminder_sent
+ACH-1001,Thivagaran,23,7708360158,thivagaran.dev@gmail.com,2026-07-28,12:40,Dr.Suresh,Attended,0,,
+ACH-1002,Veeralaskdhmi,41,9944935614,veralakshmi@gmail.com,2026-07-28,12:55,Dr.Anand,No Show,1,,
+ACH-1003,Ravi,30,7708360157,ravi@gmail.com,2026-07-28,13:30,Dr.Suresh,Pending,0,,
+ACH-1004,Thinakaran,21,7708360158,thivagaran.dev@gmail.com,2026-07-29,18:10,Dr.Anand,Pending,0,Pending,
+ACH-1005,Prakash,23,6789797909,thivagara.dev@gmail.com,2026-07-30,13:45,Dr.Suresh,Pending,0,Pending,No
