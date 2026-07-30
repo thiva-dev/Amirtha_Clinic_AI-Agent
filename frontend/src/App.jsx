@@ -30,7 +30,7 @@ const generateClinicSlots = () => {
 };
 
 export default function App() {
-  const [page, setPage] = useState('home'); // 'home', 'booking', 'receptionist_login', 'dashboard'
+  const [page, setPage] = useState('home'); // 'home', 'booking', 'receptionist_login', 'dashboard', 'view_appointments'
   const [showBookingSuccess, setShowBookingSuccess] = useState(false);
   // Patient Booking Form State
   const [formData, setFormData] = useState({
@@ -40,7 +40,7 @@ export default function App() {
   const [appointments, setAppointments] = useState([]);
   const [editingId, setEditingId] = useState(null);
 
- // Time Alert State Variable
+  // Time Alert State Variable
   const [activeAlertPatient, setActiveAlertPatient] = useState(null);
   // Receptionist Login State
   const [loginEmail, setLoginEmail] = useState('');
@@ -69,7 +69,7 @@ export default function App() {
     fetchAppointments();
   }, []);
 
-// Mobile Hamburger Menu State
+  // Mobile Hamburger Menu State
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Helper for Local Date String YYYY-MM-DD
@@ -121,8 +121,7 @@ export default function App() {
     return () => clearInterval(interval);
   }, [appointments]);
 
-
-// 📅 Sunday Leave & Date Handler
+  // 📅 Sunday Leave & Date Handler
   const handleDateChange = (val) => {
     if (!val) {
       setFormData({ ...formData, date: '', time: '' });
@@ -242,7 +241,7 @@ export default function App() {
     }
   };
 
-// Enquiry Button Click Handler
+  // Enquiry Button Click Handler
   const handleAlertEnquiry = (apt) => {
     setPage('dashboard');
     setActiveTable('todays');
@@ -275,7 +274,7 @@ export default function App() {
   };
 
   // Helper Counters
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getLocalTodayStr();
   const totalCount = appointments.length;
   const todayCount = appointments.filter(a => a.date === todayStr).length;
 
@@ -390,7 +389,7 @@ export default function App() {
                 </div>
               )}
 
-             <form onSubmit={handleBookingSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <form onSubmit={handleBookingSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">Patient Name *</label>
                   <input
@@ -512,11 +511,11 @@ export default function App() {
             {/* Top Navigation */}
             <div className="flex items-center justify-between mb-6">
               <button 
-              onClick={() => setPage('dashboard')}
-              className="flex items-center gap-2 text-teal-700 font-medium hover:text-teal-900 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" /> Back to AI Dashboard
-            </button>
+                onClick={() => setPage('dashboard')}
+                className="flex items-center gap-2 text-teal-700 font-medium hover:text-teal-900 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" /> Back to AI Dashboard
+              </button>
               <button 
                 onClick={() => setPage('home')}
                 className="text-slate-500 hover:text-slate-800 text-sm font-medium"
@@ -688,11 +687,13 @@ export default function App() {
           </div>
         </div>
       )}
-        {/* PAGE 4: DASHBOARD */}
+
+      {/* PAGE 4: RECEPTIONIST DASHBOARD (Fixed Screen Fit & Internal Chat Scroll Only) */}
       {page === 'dashboard' && (
-      <div className="min-h-screen flex flex-col bg-slate-50">
-      {/* Top Bar with Responsive Mobile Hamburger Menu (☰) */}
-          <header className="border-b border-slate-200 bg-white px-4 md:px-6 py-3 shadow-sm relative z-30">
+        <div className="h-screen h-[100dvh] max-h-screen flex flex-col bg-slate-50 text-slate-800 font-sans overflow-hidden">
+          
+          {/* 1. FIXED TOP HEADER (Flex Shrink 0) */}
+          <header className="border-b border-slate-200 bg-white px-4 md:px-6 py-3 shadow-sm relative z-30 flex-shrink-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 md:gap-3">
                 <button 
@@ -782,16 +783,16 @@ export default function App() {
             )}
           </header>
 
-          {/* Main Chat & Data Body */}
+          {/* 2. MIDDLE CHAT & DATA AREA (ONLY THIS AREA SCROLLS) */}
           <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 max-w-4xl w-full mx-auto">
             
             {/* Chat Messages */}
             {messages.map((m, idx) => (
               <div key={idx} className={`flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'}`}>
-                <div className={`max-w-xl p-4 rounded-2xl text-sm leading-relaxed ${
+                <div className={`max-w-xl p-3.5 md:p-4 rounded-2xl text-xs md:text-sm leading-relaxed ${
                   m.sender === 'user' 
-                    ? 'bg-teal-600 text-white rounded-br-none' 
-                   : 'bg-white text-slate-900 border border-slate-200 rounded-bl-none shadow-sm font-medium'
+                    ? 'bg-teal-600 text-white rounded-br-none shadow-sm' 
+                    : 'bg-white text-slate-800 border border-slate-200 rounded-bl-none shadow-sm'
                 }`}>
                   {m.text}
                 </div>
@@ -800,7 +801,7 @@ export default function App() {
                 {m.action === 'show_todays_appointments_button' && (
                   <button
                     onClick={() => setActiveTable('todays')}
-                    className="mt-3 py-2 px-4 bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold rounded-lg text-sm shadow-md transition-all flex items-center gap-2"
+                    className="mt-2.5 py-2 px-3.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg text-xs md:text-sm shadow transition-all flex items-center gap-2"
                   >
                     <Calendar className="w-4 h-4" /> Today's Appointments
                   </button>
@@ -809,7 +810,7 @@ export default function App() {
                 {m.action === 'show_total_appointments_button' && (
                   <button
                     onClick={() => setActiveTable('total')}
-                    className="mt-3 py-2 px-4 bg-teal-500 hover:bg-teal-600 text-slate-900 font-bold rounded-lg text-sm shadow-md transition-all flex items-center gap-2"
+                    className="mt-2.5 py-2 px-3.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-lg text-xs md:text-sm shadow transition-all flex items-center gap-2"
                   >
                     <Activity className="w-4 h-4" /> Total Appointments
                   </button>
@@ -819,22 +820,22 @@ export default function App() {
 
             {/* DYNAMIC TABLE SHOWING ON AI BUTTON CLICK */}
             {activeTable && (
-              <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 mt-6 animate-fade-in">
-                <div className="flex items-center justify-between border-b border-slate-700 pb-3 mb-4">
-                  <h3 className="font-bold text-teal-400 text-base">
+              <div className="bg-white border border-slate-200 rounded-2xl p-4 md:p-5 shadow-lg mt-4 animate-fade-in">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                  <h3 className="font-bold text-teal-700 text-xs md:text-base">
                     {activeTable === 'todays' ? "Today's Appointments Table" : "Total Appointments Table"}
                   </h3>
                   <button 
                     onClick={() => setActiveTable(null)}
-                    className="text-slate-400 hover:text-white"
+                    className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
                   >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
 
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs text-slate-300">
-                    <thead className="bg-slate-900 text-slate-400 uppercase">
+                  <table className="w-full text-left text-xs text-slate-700 border-collapse">
+                    <thead className="bg-slate-100 text-slate-600 uppercase font-semibold border-b border-slate-200">
                       <tr>
                         <th className="p-2.5">Patient ID</th>
                         <th className="p-2.5">Patient Name</th>
@@ -842,24 +843,25 @@ export default function App() {
                         <th className="p-2.5">Appointment Time</th>
                         <th className="p-2.5">Current Status</th>
                         <th className="p-2.5">No Shows</th>
-                         <th className="p-2.5">Risk Level</th>
+                        <th className="p-2.5">Risk Level</th>
+                        <th className="p-2.5">Patient RSVP</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-700">
+                    <tbody className="divide-y divide-slate-100">
                       {(activeTable === 'todays' 
                         ? appointments.filter(a => a.date === todayStr)
                         : appointments
                       ).map((apt) => (
-                        <tr key={apt.patient_id} className="hover:bg-slate-750">
-                          <td className="p-2.5 font-bold text-teal-400">{apt.patient_id}</td>
-                          <td className="p-2.5 font-medium text-slate-100">{apt.name}</td>
-                          <td className="p-2.5 text-amber-300">{apt.doctor}</td>
-                          <td className="p-2.5">{apt.time}</td>
+                        <tr key={apt.patient_id} className="hover:bg-slate-50 transition-colors">
+                          <td className="p-2.5 font-bold text-teal-700">{apt.patient_id}</td>
+                          <td className="p-2.5 font-medium text-slate-800">{apt.name}</td>
+                          <td className="p-2.5 text-teal-800 font-medium">{apt.doctor}</td>
+                          <td className="p-2.5 font-semibold">{apt.time}</td>
                           <td className="p-2.5">
                             <select
                               value={apt.status || "Pending"}
                               onChange={(e) => handleStatusChange(apt.patient_id, e.target.value)}
-                              className="bg-slate-900 border border-slate-600 text-slate-200 rounded px-2 py-1 focus:outline-none focus:border-teal-500"
+                              className="bg-white border border-slate-300 text-slate-800 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-teal-500 text-xs shadow-sm"
                             >
                               <option value="Pending">Pending</option>
                               <option value="Attended">Attended</option>
@@ -867,14 +869,23 @@ export default function App() {
                               <option value="Cancelled">Cancelled</option>
                             </select>
                           </td>
-                          <td className="p-2.5 font-bold text-red-400">{apt.no_show_count || 0}</td>
-                          <td className="p-2.5 font-bold">
+                          <td className="p-2.5 font-bold text-red-600">{apt.no_show_count || 0}</td>
+                          <td className="p-2.5">
                             <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${
-                              apt.risk_score === 'High' ? 'bg-red-900/80 text-red-300 border border-red-600' :
-                              apt.risk_score === 'Medium' ? 'bg-amber-900/80 text-amber-300 border border-amber-600' :
-                              'bg-emerald-900/80 text-emerald-300 border border-emerald-600'
+                              apt.risk_score === 'High' ? 'bg-red-100 text-red-700 border border-red-200' :
+                              apt.risk_score === 'Medium' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
+                              'bg-emerald-100 text-emerald-700 border border-emerald-200'
                             }`}>
                               {apt.risk_score || 'Low'} Risk
+                            </span>
+                          </td>
+                          <td className="p-2.5">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              apt.response === 'Yes' ? 'bg-emerald-100 text-emerald-800' :
+                              apt.response === 'No' ? 'bg-red-100 text-red-800' :
+                              'bg-slate-100 text-slate-600'
+                            }`}>
+                              {apt.response === 'Yes' ? 'Yes 🟢' : apt.response === 'No' ? 'No 🔴' : 'Pending 🟡'}
                             </span>
                           </td>
                         </tr>
@@ -887,29 +898,30 @@ export default function App() {
 
           </div>
 
-          {/* Calm Light Medical Input Area */}
-          <div className="p-4 border-t border-slate-200 bg-slate-100">
-            <div className="max-w-4xl mx-auto flex items-center gap-3">
+          {/* 3. FIXED BOTTOM INPUT FOOTER (Flex Shrink 0 - NEVER SCROLLS AWAY) */}
+          <div className="p-3 md:p-4 border-t border-slate-200 bg-slate-100 flex-shrink-0 z-10">
+            <div className="max-w-4xl mx-auto flex items-center gap-2 md:gap-3">
               <input
                 type="text"
-                placeholder="Ask AI Receptionist (e.g., 'Today's appointments', 'Tomorrow appointments', 'Who has highest no show count?')..."
+                placeholder="Ask AI Receptionist (e.g., 'Today's appointments', 'Tomorrow appointments')..."
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
-                className="flex-1 bg-white border border-slate-300 text-slate-900 placeholder-slate-400 rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-teal-500 shadow-sm"
+                className="flex-1 bg-white border border-slate-300 text-slate-900 placeholder-slate-400 rounded-xl px-3.5 md:px-4 py-3 focus:outline-none focus:ring-2 focus:ring-teal-500 shadow-sm text-xs md:text-sm"
               />
               <button
                 onClick={handleSendChat}
-                className="bg-teal-600 hover:bg-teal-700 text-white p-3.5 rounded-xl shadow-md transition-all flex items-center justify-center"
+                className="bg-teal-600 hover:bg-teal-700 text-white p-3 md:p-3.5 rounded-xl shadow transition-all flex items-center justify-center flex-shrink-0"
+                title="Send Message"
               >
-                <Send className="w-5 h-5" />
+                <Send className="w-4 h-4 md:w-5 md:h-5" />
               </button>
             </div>
           </div>
 
-           </div>
+        </div>
       )}
+
     </div>
   );
 }
-  

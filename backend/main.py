@@ -8,7 +8,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os
 import pandas as pd
-from datetime import datetime
 from contextlib import asynccontextmanager
 import warnings
 
@@ -26,11 +25,10 @@ from apscheduler.schedulers.background import BackgroundScheduler
 load_dotenv()
 
 CSV_FILE = "appointments.csv"
-# send_email after appointment booking
 
 import requests
 
-RESEND_API_KEY = os.getenv("RESEND_API_KEY","")
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
 
 def send_email(to_email: str, subject: str, html_body: str):
     if not RESEND_API_KEY:
@@ -66,7 +64,7 @@ def init_csv():
         df = pd.DataFrame(columns=[
             "patient_id", "name", "age", "phone", 
             "email", "date", "time", "doctor", 
-            "status", "no_show_count"
+            "status", "no_show_count", "response", "reminder_sent"
         ])
         df.to_csv(CSV_FILE, index=False)
 
@@ -83,58 +81,11 @@ def assign_doctor():
     anand_count = len(df[df["doctor"] == "Dr.Anand"])
     return "Dr.Suresh" if suresh_count <= anand_count else "Dr.Anand"
 
-# 2. Email Reminder Function
-def send_today_email_reminders():
-    df = read_csv()
-    if df.empty:
-        return 0
-    
-    today_str = datetime.now().strftime("%Y-%m-%d")
-    today_appointments = df[df["date"] == today_str]
-    
-    sent_count = 0
-    for idx, row in today_appointments.iterrows():
-        patient_email = row["email"]
-        patient_name = row["name"]
-        patient_id = row["patient_id"]
-        time_slot = row["time"]
-        doctor = row["doctor"]
-        
-        subject = f"🔔 1-Hour Prior Reminder: Your Appointment Today at Amirtha Clinic Hospital"
-        html_body = f"""
-        <div style="font-family: Arial, sans-serif; max-width: 600px; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #f9fbfb;">
-            <h2 style="color: #0d9488; text-align: center;">Amirtha Clinic Hospital</h2>
-            <hr style="border: 0; border-top: 1px solid #0d9488;">
-            <p>Dear <strong>{patient_name}</strong>,</p>
-            <p>This is your <strong>1-Hour Prior Reminder</strong> for your scheduled appointment today.</p>
-            <div style="background-color: #ffffff; padding: 15px; border-left: 4px solid #0d9488; border-radius: 5px; margin: 15px 0;">
-                <p style="margin: 5px 0;"><strong>Patient ID:</strong> {patient_id}</p>
-                <p style="margin: 5px 0;"><strong>Doctor Assigned:</strong> {doctor}</p>
-                <p style="margin: 5px 0;"><strong>Date:</strong> {today_str}</p>
-                <p style="margin: 5px 0;"><strong>Time Slot:</strong> {time_slot}</p>
-            </div>
-            
-            <!-- 🔘 Interactive RSVP Buttons ONLY in Reminder Email! -->
-            <div style="text-align: center; margin: 25px 0; padding: 15px; background-color: #ffffff; border-radius: 8px; border: 1px solid #e5e7eb;">
-                <p style="font-weight: bold; color: #374151; margin-bottom: 12px; font-size: 14px;">Are you attending this appointment in 1 hour?</p>
-                <a href="https://amirtha-clinic-ai-agent.onrender.com/api/confirm-appointment?id={patient_id}&response=Yes" style="background-color: #0d9488; color: white; padding: 10px 18px; text-decoration: none; font-weight: bold; border-radius: 6px; margin-right: 8px; display: inline-block; font-size: 13px;">✅ Yes, I'll Attend</a>
-                <a href="https://amirtha-clinic-ai-agent.onrender.com/api/confirm-appointment?id={patient_id}&response=No" style="background-color: #dc2626; color: white; padding: 10px 18px; text-decoration: none; font-weight: bold; border-radius: 6px; display: inline-block; font-size: 13px;">❌ No, Cancel Slot</a>
-            </div>
-
-            <p style="color: #6b7280; font-size: 12px; text-align: center;">Note: Confirm 'Yes' at least 1 hour before slot time.</p>
-            <p style="font-size: 12px; color: #888; text-align: center; margin-top: 20px;">Amirtha Clinic Hospital Management System</p>
-        </div>
-        """
-        if send_email(patient_email, subject, html_body):
-            sent_count += 1
-        
-    return sent_count
-
-# 🕒 Automatic 1-Hour Prior Email Reminder Checker Job
+# 🕒 Automatic 1-Hour Prior Email Reminder Checker Job (Runs in Background)
 def check_and_send_1hr_reminders():
     df = read_csv()
     if df.empty:
-        return
+        return 0
     
     now = datetime.now()
     today_str = now.strftime("%Y-%m-%d")
@@ -144,16 +95,16 @@ def check_and_send_1hr_reminders():
         df["reminder_sent"] = "No"
         df.to_csv(CSV_FILE, index=False)
 
-    updated = False
+    sent_count = 0
     for idx, row in df.iterrows():
-        if row["date"] != today_str:
+        if str(row["date"]) != today_str:
             continue
-        if row["status"] in ["Cancelled", "Attended"]:
+        if str(row.get("status")) in ["Cancelled", "Attended"]:
             continue
-        if row.get("reminder_sent") == "Yes":
+        if str(row.get("reminder_sent")) == "Yes":
             continue
             
-        time_str = row["time"]
+        time_str = str(row["time"])
         try:
             h, m = map(int, time_str.split(":"))
             apt_mins = h * 60 + m
@@ -190,14 +141,16 @@ def check_and_send_1hr_reminders():
                     <p style="color: #6b7280; font-size: 12px; text-align: center;">Note: Must confirm 'Yes' at least 1 hour before slot time.</p>
                 </div>
                 """
-                send_email(patient_email, subject, html_body)
-                df.at[idx, "reminder_sent"] = "Yes"
-                updated = True
+                if send_email(patient_email, subject, html_body):
+                    df.at[idx, "reminder_sent"] = "Yes"
+                    sent_count += 1
         except Exception as e:
             print(f"Reminder Error: {e}")
             
-    if updated:
+    if sent_count > 0:
         df.to_csv(CSV_FILE, index=False)
+        
+    return sent_count
 
 # Modern Lifespan Event Handler with 1-Min Interval Auto-Scheduler
 @asynccontextmanager
@@ -373,7 +326,8 @@ def create_appointment(data: AppointmentCreate, background_tasks: BackgroundTask
         "doctor": assigned_doctor,
         "status": "Pending",
         "no_show_count": "0",
-        "response": "Pending"
+        "response": "Pending",
+        "reminder_sent": "No"
     }
     
     df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
@@ -469,10 +423,8 @@ def update_status(patient_id: str, data: StatusUpdate):
         
     df.to_csv(CSV_FILE, index=False)
     return {"message": f"Status updated to {new_status} successfully!"}
-from datetime import datetime, timedelta
 
 # AI Chatbot Endpoint (ChatGPT / Claude Style Dynamic Smart AI Engine)
-
 @app.post("/api/chat")
 def chat_with_ai(payload: ChatMessage):
     user_msg = payload.message.strip().lower()
@@ -586,8 +538,8 @@ def chat_with_ai(payload: ChatMessage):
 
 @app.post("/api/send-reminders")
 def trigger_reminders():
-    count = send_today_email_reminders()
-    return {"message": f"Reminders processed. Sent {count} reminders for today's appointments."}
+    count = check_and_send_1hr_reminders()
+    return {"message": f"Reminders processed. Sent {count} reminders for upcoming 1-hour appointments."}
 
 if __name__ == "__main__":
     import uvicorn
