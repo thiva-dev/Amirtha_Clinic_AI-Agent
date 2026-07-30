@@ -10,6 +10,8 @@ import os
 import pandas as pd
 from contextlib import asynccontextmanager
 import warnings
+import base64
+import requests
 
 # Suppress deprecation warnings cleanly
 warnings.filterwarnings("ignore")
@@ -26,10 +28,52 @@ load_dotenv()
 
 CSV_FILE = "appointments.csv"
 
-import requests
-
+# 🔑 Resend Email API Key
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
 
+# 🔑 GitHub Permanent Auto-Sync Environment Variables
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
+GITHUB_REPO = os.getenv("GITHUB_REPO", "thiva-dev/Amirtha_Clinic_AI-Agent")
+CSV_PATH_IN_REPO = os.getenv("CSV_PATH_IN_REPO", "appointments.csv")
+
+# 💾 Permanent GitHub Auto-Commit CSV Save Function (Recursion-Free!)
+def save_csv(df: pd.DataFrame):
+    # 1. Local Save (MUST BE df.to_csv to prevent infinite recursion loop!)
+    df.to_csv(CSV_FILE, index=False)
+    
+    # 2. Permanent GitHub Auto-Commit Sync
+    if not GITHUB_TOKEN or not GITHUB_REPO:
+        return
+        
+    try:
+        url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{CSV_PATH_IN_REPO}"
+        headers = {
+            "Authorization": f"Bearer {GITHUB_TOKEN}",
+            "Accept": "application/vnd.github.v3+json"
+        }
+        
+        # Get Current File SHA from GitHub
+        res = requests.get(url, headers=headers)
+        sha = ""
+        if res.status_code == 200:
+            sha = res.json().get("sha", "")
+            
+        csv_content = df.to_csv(index=False)
+        encoded_content = base64.b64encode(csv_content.encode("utf-8")).decode("utf-8")
+        
+        payload = {
+            "message": "Auto-sync live appointment data to GitHub",
+            "content": encoded_content
+        }
+        if sha:
+            payload["sha"] = sha
+            
+        requests.put(url, json=payload, headers=headers)
+        print("💾 ✅ [GitHub Auto-Sync]: Updated CSV permanently saved to GitHub Repo!")
+    except Exception as e:
+        print(f"❌ [GitHub Sync Note]: {e}")
+
+# Email Sender
 def send_email(to_email: str, subject: str, html_body: str):
     if not RESEND_API_KEY:
         print(f"📧 [Email Simulated to {to_email}]: {subject}")
@@ -66,52 +110,11 @@ def init_csv():
             "email", "date", "time", "doctor", 
             "status", "no_show_count", "response", "reminder_sent"
         ])
-        save_csv(df)
+        df.to_csv(CSV_FILE, index=False)
 
 def read_csv():
     init_csv()
     return pd.read_csv(CSV_FILE, dtype=str).fillna("")
-import base64
-
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
-GITHUB_REPO = os.getenv("GITHUB_REPO", "thiva-dev/Amirtha_Clinic_AI-Agent")
-CSV_PATH_IN_REPO = os.getenv("CSV_PATH_IN_REPO", "appointments.csv")
-
-def save_csv(df: pd.DataFrame):
-    # 1. Save locally
-    save_csv(df)
-    
-    # 2. Save permanently to GitHub Repo
-    if not GITHUB_TOKEN or not GITHUB_REPO:
-        return
-        
-    try:
-        url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{CSV_PATH_IN_REPO}"
-        headers = {
-            "Authorization": f"Bearer {GITHUB_TOKEN}",
-            "Accept": "application/vnd.github.v3+json"
-        }
-        
-        # Get Current File SHA from GitHub
-        res = requests.get(url, headers=headers)
-        sha = ""
-        if res.status_code == 200:
-            sha = res.json().get("sha", "")
-            
-        csv_content = df.to_csv(index=False)
-        encoded_content = base64.b64encode(csv_content.encode("utf-8")).decode("utf-8")
-        
-        payload = {
-            "message": "Auto-sync live appointment data to GitHub",
-            "content": encoded_content
-        }
-        if sha:
-            payload["sha"] = sha
-            
-        requests.put(url, json=payload, headers=headers)
-        print("💾 ✅ [GitHub Auto-Sync]: Updated CSV permanently saved to GitHub Repo!")
-    except Exception as e:
-        print(f"❌ [GitHub Sync Note]: {e}")
 
 # Doctor Workload Equal Split Logic
 def assign_doctor():
@@ -122,7 +125,7 @@ def assign_doctor():
     anand_count = len(df[df["doctor"] == "Dr.Anand"])
     return "Dr.Suresh" if suresh_count <= anand_count else "Dr.Anand"
 
-# 🕒 Automatic 1-Hour Prior Email Reminder Checker Job (Runs in Background)
+# 🕒 Automatic 1-Hour Prior Email Reminder Checker Job
 def check_and_send_1hr_reminders():
     df = read_csv()
     if df.empty:
@@ -198,7 +201,6 @@ def check_and_send_1hr_reminders():
 async def lifespan(app: FastAPI):
     init_csv()
     scheduler = BackgroundScheduler()
-    # Checks every 1 minute for upcoming 1-hour prior appointments!
     scheduler.add_job(check_and_send_1hr_reminders, 'interval', minutes=1)
     scheduler.start()
     yield
@@ -242,7 +244,7 @@ class StatusUpdate(BaseModel):
 class ChatMessage(BaseModel):
     message: str
 
-# ROOT ENDPOINT (Fixes 404 error)
+# ROOT ENDPOINT
 @app.get("/")
 def home():
     return {"message": "Amirtha Clinic Hospital Backend API is Running Successfully!"}
@@ -334,7 +336,6 @@ def get_appointments():
     df = read_csv()
     records = df.to_dict(orient="records")
     
-    # Dynamic Risk Score Calculation
     for rec in records:
         no_show = int(rec.get("no_show_count", 0)) if str(rec.get("no_show_count", 0)).isdigit() else 0
         if no_show >= 2:
@@ -374,7 +375,7 @@ def create_appointment(data: AppointmentCreate, background_tasks: BackgroundTask
     df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
     save_csv(df)
     
-    # 📩 Instant Confirmation Receipt Email (Without RSVP Yes/No Buttons)
+    # 📩 Instant Confirmation Receipt Email
     subject = f"✅ Appointment Confirmed [{patient_id}] - Amirtha Clinic Hospital"
     html_body = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #ffffff;">
@@ -465,32 +466,28 @@ def update_status(patient_id: str, data: StatusUpdate):
     save_csv(df)
     return {"message": f"Status updated to {new_status} successfully!"}
 
-# AI Chatbot Endpoint (ChatGPT / Claude Style Dynamic Smart AI Engine)
+# AI Chatbot Endpoint
 @app.post("/api/chat")
 def chat_with_ai(payload: ChatMessage):
     user_msg = payload.message.strip().lower()
     df = read_csv()
     
-    # Live Dates Calculation for AI Context
     today_date = datetime.now()
     today_str = today_date.strftime("%Y-%m-%d")
     tomorrow_str = (today_date + timedelta(days=1)).strftime("%Y-%m-%d")
     
-    # Trigger 1: Today's Appointments (Dynamic Table Button)
     if "today's appointment" in user_msg or "today appointment" in user_msg or user_msg == "today's appointments":
         return {
             "reply": "Today's appointments-ai paarka keezha irukkura 'Today's Appointments' button-ah click pannunga.",
             "action": "show_todays_appointments_button"
         }
         
-    # Trigger 2: Total Appointments (Dynamic Table Button)
     if "total appointment" in user_msg or user_msg == "total appointments":
         return {
             "reply": "total appointments-ai paarka keezha irukkura 'total Appointments' button-ah click pannunga.",
             "action": "show_total_appointments_button"
         }
 
-    # Trigger 3: Overbooking / Risk Recommendations
     if "risk" in user_msg or "overbook" in user_msg or "standby" in user_msg or "recommend" in user_msg:
         if df.empty:
             return {"reply": "No patient records available to evaluate risk.", "action": "none"}
@@ -509,7 +506,6 @@ def chat_with_ai(payload: ChatMessage):
 
     csv_data_str = df.to_string(index=False)
     
-    # --- 🤖 1. GEMINI AI ENGINE (ChatGPT / Claude Intelligence) ---
     if GEMINI_API_KEY and genai:
         try:
             model = genai.GenerativeModel("gemini-1.5-flash")
@@ -528,9 +524,6 @@ def chat_with_ai(payload: ChatMessage):
         except Exception as e:
             print(f"Gemini API note: {e}")
 
-    # --- 🧠 2. SMART DYNAMIC FALLBACK ENGINE (If No Gemini API Key) ---
-    
-    # Case A: Tomorrow's Appointments Query
     if "tomorrow" in user_msg:
         if df.empty:
             return {"reply": "There are no appointment records in the database.", "action": "none"}
@@ -541,7 +534,6 @@ def chat_with_ai(payload: ChatMessage):
         apts_list = "\n".join([f"• {r['name']} (ID: {r['patient_id']}) at {r['time']} with {r['doctor']} [{r['status']}]" for _, r in tomorrow_apts.iterrows()])
         return {"reply": f"📅 Tomorrow's Appointments ({tomorrow_str}):\n\n{apts_list}", "action": "none"}
 
-    # Case B: Highest No-Show Query
     if "highest no-show" in user_msg or "highest no show" in user_msg:
         if df.empty:
             return {"reply": "There are no patient records currently.", "action": "none"}
@@ -553,7 +545,6 @@ def chat_with_ai(payload: ChatMessage):
         names = ", ".join(top_patients['name'].tolist())
         return {"reply": f"The patient(s) with the highest no-show count ({int(max_no_show)}) is/are: {names}.", "action": "none"}
 
-    # Case C: Doctor Specific Queries (Dr. Suresh / Dr. Anand)
     if "suresh" in user_msg or "anand" in user_msg:
         doc_name = "Dr.Suresh" if "suresh" in user_msg else "Dr.Anand"
         doc_apts = df[df["doctor"].str.lower() == doc_name.lower()]
@@ -562,7 +553,6 @@ def chat_with_ai(payload: ChatMessage):
         apts_list = ", ".join([f"{r['name']} ({r['date']} at {r['time']})" for _, r in doc_apts.iterrows()])
         return {"reply": f"Appointments assigned to {doc_name} ({len(doc_apts)} total): {apts_list}.", "action": "none"}
 
-    # Case D: More than X no-shows
     if "more than" in user_msg and "no-show" in user_msg:
         df['no_show_num'] = pd.to_numeric(df['no_show_count'], errors='coerce').fillna(0)
         filtered = df[df['no_show_num'] > 2]
@@ -571,13 +561,13 @@ def chat_with_ai(payload: ChatMessage):
         names = ", ".join(filtered['name'].tolist())
         return {"reply": f"Patients with more than 2 no-shows: {names}.", "action": "none"}
 
-    # Case E: Default Summary Reply
     return {
         "reply": f"I am your AI Receptionist Assistant. Total registered patients: {len(df)}. Today is {today_str}. You can ask me about today's/tomorrow's appointments, doctor schedules, or patient risk history!",
         "action": "none"
     }
 
-@app.post("/api/send-reminders")
+# Support both GET and POST for /api/send-reminders (Fixes 405 Method Not Allowed!)
+@app.api_route("/api/send-reminders", methods=["GET", "POST"])
 def trigger_reminders():
     count = check_and_send_1hr_reminders()
     return {"message": f"Reminders processed. Sent {count} reminders for upcoming 1-hour appointments."}
