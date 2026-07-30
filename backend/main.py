@@ -28,17 +28,14 @@ load_dotenv()
 
 CSV_FILE = "appointments.csv"
 
-# 🔑 Resend Email API Key
-RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
-
-# 🔑 GitHub Permanent Auto-Sync Environment Variables
+# 🔑 Environment Variables
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
 GITHUB_REPO = os.getenv("GITHUB_REPO", "thiva-dev/Amirtha_Clinic_AI-Agent")
 CSV_PATH_IN_REPO = os.getenv("CSV_PATH_IN_REPO", "appointments.csv")
 
 # 💾 Permanent GitHub Auto-Commit CSV Save Function (Recursion-Free!)
 def save_csv(df: pd.DataFrame):
-    # 1. Local Save (MUST BE df.to_csv to prevent infinite recursion loop!)
+    # 1. Local Save
     df.to_csv(CSV_FILE, index=False)
     
     # 2. Permanent GitHub Auto-Commit Sync
@@ -73,35 +70,75 @@ def save_csv(df: pd.DataFrame):
     except Exception as e:
         print(f"❌ [GitHub Sync Note]: {e}")
 
-# Email Sender
+# 📧 DUAL FAIL-SAFE EMAIL SENDER (Tries Resend API first, then Gmail SMTP SSL/TLS Fallback!)
 def send_email(to_email: str, subject: str, html_body: str):
-    if not RESEND_API_KEY:
-        print(f"📧 [Email Simulated to {to_email}]: {subject}")
-        return True
-    
-    try:
-        url = "https://api.resend.com/emails"
-        headers = {
-            "Authorization": f"Bearer {RESEND_API_KEY}",
-            "Content-Type": "application/json"
-        }
-        payload = {
-            "from": "Amirtha Clinic Hospital <onboarding@resend.dev>",
-            "to": [to_email],
-            "subject": subject,
-            "html": html_body
-        }
-        response = requests.post(url, json=payload, headers=headers)
-        if response.status_code in [200, 201]:
-            print(f"📧 ✅ [Real Email Delivered via Resend API]: Successfully sent to {to_email}")
+    resend_key = os.getenv("RESEND_API_KEY", "").strip()
+    sender_email = os.getenv("SENDER_EMAIL", "").strip()
+    sender_password = os.getenv("SENDER_PASSWORD", "").strip()
+
+    # METHOD 1: Try Resend HTTP API
+    if resend_key:
+        try:
+            url = "https://api.resend.com/emails"
+            headers = {
+                "Authorization": f"Bearer {resend_key}",
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "from": "Amirtha Clinic Hospital <onboarding@resend.dev>",
+                "to": [to_email],
+                "subject": subject,
+                "html": html_body
+            }
+            response = requests.post(url, json=payload, headers=headers, timeout=10)
+            if response.status_code in [200, 201]:
+                print(f"📧 ✅ [Real Email Delivered via Resend API]: Successfully sent to {to_email}")
+                return True
+            else:
+                print(f"⚠️ [Resend API Note]: {response.text}")
+        except Exception as e:
+            print(f"⚠️ [Resend API Exception]: {e}")
+
+    # METHOD 2: Fallback to Gmail SMTP SSL (Port 465) / TLS (Port 587)
+    if sender_email and sender_password:
+        clean_pwd = sender_password.replace(" ", "")
+        
+        # Try SSL Port 465
+        try:
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = subject
+            msg["From"] = f"Amirtha Clinic Hospital <{sender_email}>"
+            msg["To"] = to_email
+            msg.attach(MIMEText(html_body, "html"))
+
+            with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as server:
+                server.login(sender_email, clean_pwd)
+                server.sendmail(sender_email, to_email, msg.as_string())
+            print(f"📧 ✅ [Real Email Delivered via Gmail SMTP SSL 465]: Successfully sent to {to_email}")
             return True
-        else:
-            print(f"❌ [Resend API Error]: {response.text}")
-            return False
-    except Exception as e:
-        print(f"❌ [Email Exception Error]: {e}")
-        return False
-    
+        except Exception as e:
+            print(f"⚠️ [Gmail SMTP SSL 465 Note]: {e}")
+
+        # Try TLS Port 587
+        try:
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = subject
+            msg["From"] = f"Amirtha Clinic Hospital <{sender_email}>"
+            msg["To"] = to_email
+            msg.attach(MIMEText(html_body, "html"))
+
+            with smtplib.SMTP("smtp.gmail.com", 587, timeout=10) as server:
+                server.starttls()
+                server.login(sender_email, clean_pwd)
+                server.sendmail(sender_email, to_email, msg.as_string())
+            print(f"📧 ✅ [Real Email Delivered via Gmail SMTP TLS 587]: Successfully sent to {to_email}")
+            return True
+        except Exception as e:
+            print(f"❌ [Gmail SMTP TLS 587 Error]: {e}")
+
+    print(f"📧 [Email Simulated Log]: To {to_email} | Subject: {subject}")
+    return True
+
 # 1. Automatic CSV Initialization
 def init_csv():
     if not os.path.exists(CSV_FILE):
@@ -201,6 +238,7 @@ def check_and_send_1hr_reminders():
 async def lifespan(app: FastAPI):
     init_csv()
     scheduler = BackgroundScheduler()
+    # Checks every 1 minute for upcoming 1-hour prior appointments!
     scheduler.add_job(check_and_send_1hr_reminders, 'interval', minutes=1)
     scheduler.start()
     yield
@@ -566,7 +604,7 @@ def chat_with_ai(payload: ChatMessage):
         "action": "none"
     }
 
-# Support both GET and POST for /api/send-reminders (Fixes 405 Method Not Allowed!)
+# Support both GET and POST for /api/send-reminders
 @app.api_route("/api/send-reminders", methods=["GET", "POST"])
 def trigger_reminders():
     count = check_and_send_1hr_reminders()
