@@ -65,9 +65,10 @@ export default function App() {
     }
   };
 
+  // Auto-Fetch Fresh Live Data on Every Page Navigation (Fixes Mobile vs Laptop Sync)
   useEffect(() => {
     fetchAppointments();
-  }, []);
+  }, [page]);
 
   // Mobile Hamburger Menu State
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -222,6 +223,7 @@ export default function App() {
 
     if (loginEmail === 'meena@email.com' && loginPassword === 'meena123') {
       setShowWelcome(true);
+      fetchAppointments(); // 🔄 Fetch freshest live data on Meena Login!
       setTimeout(() => {
         setShowWelcome(false);
         setPage('dashboard');
