@@ -310,7 +310,7 @@ def confirm_appointment(id: str, response: str):
         apt_dt = datetime.now()
         
     now_ist = datetime.utcnow() + timedelta(hours=5, minutes=30)
-    cutoff_dt = apt_dt - timedelta(hours=1)
+    cutoff_dt = apt_dt - timedelta(minutes=15)
 
     if clean_resp == "Yes":
         if now_ist > cutoff_dt:
@@ -322,7 +322,7 @@ def confirm_appointment(id: str, response: str):
                         <h2 style="color: #dc2626; margin-bottom: 5px;">Amirtha Clinic Hospital</h2>
                         <h3 style="color: #374151; margin-top: 15px;">Confirmation Window Closed</h3>
                         <p style="color: #4b5563; line-height: 1.6; font-size: 15px;">
-                            Dear <strong>{patient_name}</strong>, you can only confirm "Yes" at least <strong>1 hour before</strong> your appointment time ({apt_time_str}).
+                            Dear <strong>{patient_name}</strong>, you can confirm "Yes" up to <strong>15 minutes before</strong> your appointment time ({apt_time_str}).
                         </p>
                         <p style="color: #d97706; font-weight: bold; font-size: 14px; background-color: #fef3c7; padding: 10px; border-radius: 8px;">Your status remains PENDING.</p>
                         <div style="margin-top: 25px; padding-top: 15px; border-top: 1px solid #eee; font-size: 12px; color: #9ca3af;">
