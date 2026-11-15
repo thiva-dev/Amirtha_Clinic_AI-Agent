@@ -30,7 +30,7 @@ CSV_FILE = "appointments.csv"
 
 # 🔑 Environment Variables
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
-GITHUB_REPO = os.getenv("GITHUB_REPO", "thiva-dev/Amirtha_Clinic_AI-Agent")
+GITHUB_REPO = os.getenv("GITHUB_REPO", "thiva-dev/Clinic Agent")
 CSV_PATH_IN_REPO = os.getenv("CSV_PATH_IN_REPO", "appointments.csv")
 
 # 💾 Permanent GitHub Auto-Commit CSV Save Function (Recursion-Free!)
@@ -108,7 +108,7 @@ def send_email(to_email: str, subject: str, html_body: str):
         try:
             msg = MIMEMultipart("alternative")
             msg["Subject"] = subject
-            msg["From"] = f"Amirtha Clinic Hospital <{sender_email}>"
+            msg["From"] = f"Clinic Agent <{sender_email}>"
             msg["To"] = to_email
             msg.attach(MIMEText(html_body, "html"))
 
@@ -124,7 +124,7 @@ def send_email(to_email: str, subject: str, html_body: str):
         try:
             msg = MIMEMultipart("alternative")
             msg["Subject"] = subject
-            msg["From"] = f"Amirtha Clinic Hospital <{sender_email}>"
+            msg["From"] = f"Clinic Agent <{sender_email}>"
             msg["To"] = to_email
             msg.attach(MIMEText(html_body, "html"))
 
@@ -200,10 +200,10 @@ def check_and_send_1hr_reminders():
                 patient_id = row["patient_id"]
                 doctor = row["doctor"]
                 
-                subject = f"🔔 1-Hour Prior Reminder: Your Appointment Today at Amirtha Clinic Hospital"
+                subject = f"🔔 1-Hour Prior Reminder: Your Appointment Today at Clinic"
                 html_body = f"""
                 <div style="font-family: Arial, sans-serif; max-width: 600px; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #f9fbfb;">
-                    <h2 style="color: #0d9488; text-align: center;">Amirtha Clinic Hospital</h2>
+                    <h2 style="color: #0d9488; text-align: center;">Clinic</h2>
                     <hr style="border: 0; border-top: 1px solid #0d9488;">
                     <p>Dear <strong>{patient_name}</strong>,</p>
                     <p>This is your <strong>1-Hour Prior Reminder</strong> for your scheduled appointment today at <strong>{time_str}</strong>.</p>
@@ -246,7 +246,7 @@ async def lifespan(app: FastAPI):
     yield
     scheduler.shutdown()
 
-app = FastAPI(title="Amirtha Clinic Hospital API", lifespan=lifespan)
+app = FastAPI(title="Clinic Agent API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -287,7 +287,7 @@ class ChatMessage(BaseModel):
 # ROOT ENDPOINT
 @app.get("/")
 def home():
-    return {"message": "Amirtha Clinic Hospital Backend API is Running Successfully!"}
+    return {"message": " Clinic Agent Backend API is Running Successfully!"}
 
 # API Endpoints
 @app.get("/api/confirm-appointment", response_class=HTMLResponse)
@@ -319,7 +319,7 @@ def confirm_appointment(id: str, response: str):
                 <head><title>Confirmation Window Closed</title><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
                 <body style="font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f3f4f6; margin: 0;">
                     <div style="background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; max-width: 420px; width: 90%;">
-                        <h2 style="color: #dc2626; margin-bottom: 5px;">Amirtha Clinic Hospital</h2>
+                        <h2 style="color: #dc2626; margin-bottom: 5px;">Clinic Agent</h2>
                         <h3 style="color: #374151; margin-top: 15px;">Confirmation Window Closed</h3>
                         <p style="color: #4b5563; line-height: 1.6; font-size: 15px;">
                             Dear <strong>{patient_name}</strong>, you can confirm "Yes" up to <strong>15 minutes before</strong> your appointment time ({apt_time_str}).
@@ -340,7 +340,7 @@ def confirm_appointment(id: str, response: str):
                 <head><title>Appointment Confirmed</title><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
                 <body style="font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f3f4f6; margin: 0;">
                     <div style="background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; max-width: 420px; width: 90%;">
-                        <h2 style="color: #0d9488; margin-bottom: 5px;">Amirtha Clinic Hospital</h2>
+                        <h2 style="color: #0d9488; margin-bottom: 5px;">Clinic Agent</h2>
                         <h3 style="color: #374151; margin-top: 15px;">Hello, {patient_name}</h3>
                         <p style="color: #4b5563; line-height: 1.6; font-size: 15px;">Your attendance has been <strong>CONFIRMED</strong>! We look forward to seeing you at {apt_time_str}.</p>
                         <div style="margin-top: 25px; padding-top: 15px; border-top: 1px solid #eee; font-size: 12px; color: #9ca3af;">You can close this window now.</div>
@@ -362,7 +362,7 @@ def confirm_appointment(id: str, response: str):
             <head><title>Appointment Cancelled</title><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
             <body style="font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f3f4f6; margin: 0;">
                 <div style="background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; max-width: 420px; width: 90%;">
-                    <h2 style="color: #dc2626; margin-bottom: 5px;">Amirtha Clinic Hospital</h2>
+                    <h2 style="color: #dc2626; margin-bottom: 5px;">Clinic Agent</h2>
                     <h3 style="color: #374151; margin-top: 15px;">Hello, {patient_name}</h3>
                     <p style="color: #4b5563; line-height: 1.6; font-size: 15px;">Your appointment has been <strong>CANCELLED</strong> as requested and logged. Thank you for informing us.</p>
                     <div style="margin-top: 25px; padding-top: 15px; border-top: 1px solid #eee; font-size: 12px; color: #9ca3af;">You can close this window now.</div>
@@ -416,11 +416,11 @@ def create_appointment(data: AppointmentCreate, background_tasks: BackgroundTask
     save_csv(df)
     
     # 📩 Instant Confirmation Receipt Email
-    subject = f"✅ Appointment Confirmed [{patient_id}] - Amirtha Clinic Hospital"
+    subject = f"✅ Appointment Confirmed [{patient_id}] - Clinic Agent"
     html_body = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #ffffff;">
         <div style="background-color: #0d9488; color: white; padding: 15px; text-align: center; border-radius: 8px 8px 0 0;">
-            <h1 style="margin: 0; font-size: 22px;">Amirtha Clinic Hospital</h1>
+            <h1 style="margin: 0; font-size: 22px;">Clinic Agent</h1>
             <p style="margin: 5px 0 0 0; font-size: 14px;">Appointment Booking Receipt</p>
         </div>
         <div style="padding: 20px;">
@@ -449,7 +449,7 @@ def create_appointment(data: AppointmentCreate, background_tasks: BackgroundTask
             <p style="color: #4b5563; font-size: 13px;">Note: You will receive a reminder email 1 hour prior to your appointment time with confirmation buttons.</p>
         </div>
         <div style="text-align: center; font-size: 12px; color: #9ca3af; border-top: 1px solid #eee; padding-top: 10px;">
-            Thank you for choosing Amirtha Clinic Hospital.
+            Thank you for choosing Clinic Agent.
         </div>
     </div>
     """
@@ -550,7 +550,7 @@ def chat_with_ai(payload: ChatMessage):
         try:
             model = genai.GenerativeModel("gemini-1.5-flash")
             prompt = (
-                f"You are the AI Receptionist Assistant at Amirtha Clinic Hospital.\n"
+                f"You are the AI Receptionist Assistant at Clinic Agent.\n"
                 f"Today's Date: {today_str}\n"
                 f"Tomorrow's Date: {tomorrow_str}\n\n"
                 f"Current Hospital Appointments Database (CSV Snapshot):\n{csv_data_str}\n\n"

@@ -338,7 +338,7 @@ export default function App() {
           {/* Center Heading */}
           <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-4">
             <h1 className="text-4xl md:text-6xl font-extrabold text-white tracking-wide drop-shadow-md">
-              Amirtha Clinic Hospital
+            Clinic Agent
             </h1>
             <p className="text-teal-200 mt-3 text-lg max-w-lg font-light">
               Compassionate Care, Advanced Medical Excellence & Smart Healthcare Management
@@ -499,7 +499,7 @@ export default function App() {
                   </select>
                 </div>
 
-                {/* 🔘 Clean Full-Width Submit Button for Patients */}
+                {/* Clean Full-Width Submit Button for Patients */}
                 <div className="md:col-span-2 pt-2">
                   <button
                     type="submit"
@@ -652,7 +652,7 @@ export default function App() {
                 <User className="w-7 h-7" />
               </div>
               <h2 className="text-2xl font-bold text-slate-800">Receptionist Sign In</h2>
-              <p className="text-slate-500 text-sm mt-1">Amirtha Clinic Hospital Management</p>
+              <p className="text-slate-500 text-sm mt-1">Clinic Agent Management</p>
             </div>
 
             {loginError && (
